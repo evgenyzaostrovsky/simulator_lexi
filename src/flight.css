@@ -1,0 +1,8 @@
+.textarea-wrap{position:relative}
+.textarea-wrap textarea,.flight-text{font:500 22px/1.5 'Space Grotesk',sans-serif;white-space:pre-wrap;overflow-wrap:break-word;letter-spacing:normal;padding:18px 0;border:0;border-top:1px solid #ddd;width:100%;min-height:155px}
+.textarea-wrap textarea{resize:none;overflow:hidden}
+.textarea-wrap.is-flying textarea{visibility:hidden}
+.flight-text{position:absolute;inset:0;pointer-events:none}
+.comma-target{display:inline-block;opacity:0;color:#db3a22}
+.comet-particle{position:absolute;left:0;top:0;pointer-events:none;color:#db3a22;text-shadow:0 0 8px #ffbf2f;transform-origin:left top;opacity:0;z-index:5}
+button:disabled{cursor:wait;opacity:.65}

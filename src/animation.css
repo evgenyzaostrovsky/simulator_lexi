@@ -1,4 +1,0 @@
-.textarea-wrap{position:relative}
-.flying-comma{position:absolute;left:calc(50% - 12px);bottom:5px;color:#db3a22;font:700 38px Georgia,serif;line-height:1;pointer-events:none;z-index:3;animation:comma-flight 1s var(--delay) cubic-bezier(.18,.8,.25,1) forwards}
-.flying-comma:after{content:'';position:absolute;width:15px;height:8px;left:-7px;top:22px;border-radius:50%;background:#ffbf2f;opacity:.65;filter:blur(4px)}
-@keyframes comma-flight{0%{opacity:0;transform:translate(0,0) scale(.2) rotate(0)}12%{opacity:1}48%{transform:translate(calc(var(--x) - 50vw),var(--y)) scale(1.5) rotate(var(--spin))}100%{opacity:0;transform:translate(calc(var(--x) - 50vw),calc(var(--y) + 145px)) scale(.65) rotate(calc(var(--spin) + 180deg))}}
