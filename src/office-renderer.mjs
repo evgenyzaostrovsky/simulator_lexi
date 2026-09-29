@@ -1,4 +1,4 @@
-import {WIDTH,HEIGHT,platforms} from './office-engine.mjs';
+import {WIDTH,HEIGHT,platforms,documents,hazards,doors} from './office-engine.mjs';
 import {scenery} from './office-scenery.mjs';
 
 const VIEW_W=960,VIEW_H=540,ZOOM=1.16;
@@ -61,6 +61,11 @@ export function createRenderer(canvas){
       if(p.stun>0){for(let k=0;k<3;k++)text('✦',p.x+Math.cos(time*7+k*2.1)*22,p.y-125+Math.sin(time*7+k*2.1)*5,14,'#ffe7a6','center');}
     }
   }
+  function levelObjects(s){
+    for(const d of s.documents){if(d.got)continue;const bob=Math.sin(s.time*3+d.pulse)*4;g.save();g.translate(d.x,d.y-42+bob);g.rotate(Math.sin(s.time*2+d.pulse)*.08);art.shape(-16,-21,32,42,'#f1d083','#75533b',3);art.rect(-10,-13,20,2,'#bd6c44');art.rect(-10,-5,14,2,'#bd6c44');art.rect(-10,3,17,2,'#bd6c44');text('!',0,18,18,'#c7462c','center');g.restore();}
+    for(const hazard of hazards){g.save();g.translate(hazard.x,hazard.y);if(hazard.type==='spill'){g.fillStyle='#468da070';g.beginPath();g.ellipse(hazard.w/2,0,hazard.w/2,7,0,0,7);g.fill();for(let i=0;i<4;i++)art.rect(15+i*19,-2-(i%2)*4,10,2,'#9ed1c0');}else if(hazard.type==='cable'){art.rect(0,0,hazard.w,5,'#d0a34d');for(let x=8;x<hazard.w;x+=16)art.rect(x,0,6,5,'#4d4135');}else{g.globalAlpha=.65;g.shadowColor='#ee5f4c';g.shadowBlur=12;art.rect(0,-2,hazard.w,4,'#e75a47');g.globalAlpha=1;}g.restore();}
+    for(const door of doors){const locked=door.locked;g.save();g.translate(door.x,door.y);art.shape(0,-145,54,145,locked?'#4c3532':'#5f8a6e','#2b2d2b',4);art.shape(9,-132,36,74,locked?'#5a423d':'#87ad8d','#292d2a',2);text(locked?'LOCKED':'OPEN',27,-37,8,locked?'#ffad7e':'#d6efb7','center');if(locked)text('🔒',27,-71,18,'#ffd17c','center');g.restore();}
+  }
   function lighting(s){
     g.save();g.globalCompositeOperation='screen';
     for(let x=Math.floor(camera.x/330)*330;x<camera.x+worldW+330;x+=330){
@@ -82,6 +87,7 @@ export function createRenderer(canvas){
     text('ЛЕХА',82,37,13,'#ffe2a3');text('ОТДЕЛ СРОЧНЫХ ЗАДАЧ',82,51,8,'#bdc3ab');
     for(let i=0;i<s.staff.length;i++)art.shape(82+i*17,60,12,5,i<s.score?'#eec071':'#43605b',i<s.score?'#b78947':'#2d4845',1);
     text(`${s.score} / ${s.staff.length}`,244,38,12,'#e9d5a4','right');
+    text(`HP ${'♥'.repeat(s.hp)}${'♡'.repeat(3-s.hp)}  •  ДОКУМЕНТЫ ${s.keys}/4`,270,79,10,'#f0d49e');
     panel(18,h-55,251,37);text('SHIFT',31,h-33,11,'#f0d29b');text(s.player.dashCooldown>0?'ПЕРЕЗАРЯДКА':'РЫВОК ГОТОВ',84,h-33,10,s.player.dashCooldown>0?'#a5af9d':'#c8daa8');
     art.rect(29,h-24,225,2,'#324c48');art.rect(29,h-24,225*Math.max(0,1-s.player.dashCooldown/.7),2,'#d4b879');
     panel(w-180,16,162,82);text('ПЛАН ОФИСА',w-163,31,8,'#b9c3af');
@@ -109,6 +115,7 @@ export function createRenderer(canvas){
       }
       art.floor(f);
     }
+    levelObjects(s);
     art.printer(1810,1030);art.cooler(2430,810);art.plant(745,590);art.plant(1190,370);art.plant(43,1030);art.cabinet(935,810);art.cabinet(1785,810);art.cabinet(1550,590);
     const signs=[[35,1030,'01','ПРИЁМНАЯ'],[920,810,'02','БУХГАЛТЕРИЯ'],[1540,590,'03','РАЗРАБОТКА'],[1110,370,'04','ДИРЕКЦИЯ']];
     for(const [x,y,num,title] of signs){art.shape(x,y-204,150,22,'#304843','#193a38');text(`${num}  /  ${title}`,x+10,y-189,10,'#e7d5a8');}

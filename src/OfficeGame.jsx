@@ -39,6 +39,6 @@ export default function OfficeGame(){
     <p>A / D или ← → — бег · пробел — двойной прыжок · Shift — рывок · J / X — удар · ↓ — спуститься · Esc — пауза</p>
     <div className="game-stage"><canvas ref={canvas} width="960" height="540" aria-label="Офисный платформер с видом сбоку"/>{paused&&<button className="pause-overlay" onClick={()=>{pause.current=false;setPaused(false);}}>ПАУЗА · ПРОДОЛЖИТЬ ▶</button>}</div>
     <div className="game-controls"><div className="dpad"><button {...hold('left')} aria-label="Бежать влево">←</button><button {...hold('right')} aria-label="Бежать вправо">→</button></div><button onClick={()=>controls.current.jump=true}>Прыжок ↑</button><button onClick={()=>controls.current.dash=true}>Рывок ⇢</button><button onClick={()=>controls.current.drop=true}>Спуститься ↓</button><button className="hit-button" onClick={()=>controls.current.attack=true}>УДАРИТЬ КЛАВОЙ</button><button onClick={()=>setRound(v=>v+1)}>Заново ↻</button></div>
-    <p className="game-message" role="status">{hud.message}</p><p>Два нажатия прыжка помогут подняться на следующий этаж. Леха бьёт в ту сторону, куда смотрит.</p>
+    <p className="game-message" role="status">{hud.message}</p><p>Собери документы, обходи опасные зоны и открывай двери по пути. Два нажатия прыжка помогут подняться на следующий этаж.</p>
   </section>;
 }

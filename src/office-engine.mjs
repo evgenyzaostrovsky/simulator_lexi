@@ -8,11 +8,14 @@ export const platforms = [
 ];
 const roles = ['Стажёр','Менеджер','Бухгалтер','Дизайнер','У кулера','Аналитик','Разработчик','У принтера','Директор'];
 const positions = [[520,1030],[2090,1030],[420,810],[1390,810],[2220,810],[300,590],[1150,590],[2080,590],[1480,370]];
+export const documents = [[740,1030],[1030,810],[1600,590],[2130,370]];
+export const hazards = [{x:790,y:1018,w:92,h:12,type:'spill'},{x:1260,y:798,w:110,h:12,type:'cable'},{x:1860,y:578,w:105,h:12,type:'laser'},{x:1680,y:358,w:105,h:12,type:'laser'}];
+export const doors = [{x:870,y:1030,h:150,locked:true},{x:1480,y:810,h:150,locked:true},{x:1800,y:590,h:150,locked:true}];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function createGame(){return {
-  player:{x:110,y:1030,vx:0,vy:0,face:1,grounded:true,jumps:0,coyote:.1,dash:0,dashCooldown:0,attack:0,attackCooldown:0,drop:0},
+  player:{x:110,y:1030,vx:0,vy:0,face:1,grounded:true,jumps:0,coyote:.1,dash:0,dashCooldown:0,attack:0,attackCooldown:0,drop:0,invuln:0},
   staff:positions.map(([x,y],i)=>({x,y,vx:0,vy:0,face:-1,home:x,floor:y,stun:0,panic:0,done:false,name:roles[i],color:['#d99e59','#9baabd','#c48e94'][i%3]})),
-  score:0,time:0,rage:0,shake:0,freeze:0,particles:[],ghosts:[],message:'Догони всех девятерых. Дедлайн не ждёт.',won:false
+  score:0,documents:documents.map(([x,y],i)=>({x,y,got:false,pulse:i})),keys:0,checkpoints:[110,110,110],checkpoint:0,hp:3,time:0,rage:0,shake:0,freeze:0,particles:[],ghosts:[],message:'Собери 4 срочных документа и раздай задачи.',won:false
 };}
 export function physics(p,dt,drop=false){
   const oldY=p.y;p.x=clamp(p.x+p.vx*dt,24,WIDTH-24);p.vy+=1500*dt;p.y+=p.vy*dt;p.grounded=false;
@@ -36,7 +39,16 @@ export function updateGame(s,input,dt){
   if(axis)p.face=axis;
   p.vx=p.dash>0?p.face*830:axis*295;
   if(p.dash>0){p.vy=0;s.ghosts.push({x:p.x,y:p.y,face:p.face,life:.22});}
+  const previousX=p.x;
   physics(p,dt,p.drop>0);
+  for(const door of doors){
+    if(door.locked&&Math.abs(p.y-door.y)<32&&Math.abs(p.x-door.x)<28&&Math.abs(previousX-door.x)>Math.abs(p.x-door.x)){p.x=previousX;p.vx=0;s.message=`Дверь закрыта. Нужны документы: ${Math.min(4,doors.indexOf(door)+1)}.`;}
+  }
+  for(const doc of s.documents){if(!doc.got&&Math.abs(doc.x-p.x)<30&&Math.abs(doc.y-p.y)<55){doc.got=true;s.keys++;s.message=`Документ ${s.keys}/4 забран. Двери ждут пропуск.`;burst(s,doc.x,doc.y-30,12,'#ffe18a');}}
+  for(const hazard of hazards){if(Math.abs(p.x-(hazard.x+hazard.w/2))<hazard.w/2+15&&Math.abs(p.y-hazard.y)<34&&p.drop<=0&&p.invuln<=0){p.invuln=1.2;s.hp--;p.vx=-p.face*330;p.vy=-280;s.shake=.25;s.message='Осторожно! Леха потерял HP на опасной зоне.';if(s.hp<=0){p.x=s.checkpoint;p.y=platforms.find(f=>f.y===s.checkpoints[s.checkpoint]?f.y:1030)||1030;p.hp=3;s.hp=3;s.message='Рестарт с чекпоинта. Офис стал ещё злее.';}}}
+  p.invuln=Math.max(0,p.invuln||0-dt);
+  for(const door of doors)door.locked=s.keys<Math.min(4,doors.indexOf(door)+1);
+  const nextCheckpoint=s.keys>1?Math.min(2,Math.floor(s.keys/2)):0;if(nextCheckpoint>s.checkpoint){s.checkpoint=nextCheckpoint;s.checkpoints[nextCheckpoint]=p.x;s.message='Чекпоинт сохранён. Теперь дверь выше открыта.';}
   if(input.attack){input.attack=false;if(!p.attackCooldown){p.attack=.24;p.attackCooldown=.32;
     let hit=false;
     for(const n of s.staff){if(n.stun>0)continue;const dx=n.x-p.x;
@@ -64,5 +76,5 @@ export function updateGame(s,input,dt){
   for(const particle of s.particles){particle.life-=dt;particle.x+=particle.vx*dt;particle.y+=particle.vy*dt;particle.vy+=850*dt;}
   s.particles=s.particles.filter(a=>a.life>0);
   for(const ghost of s.ghosts)ghost.life-=dt;s.ghosts=s.ghosts.filter(a=>a.life>0);
-  if(s.score===s.staff.length){s.won=true;s.message='Все получили срочные задачи. Офис твой!';}
+  if(s.score===s.staff.length&&s.keys===s.documents.length){s.won=true;s.message='Все получили срочные задачи. Офис твой!';}
 }
