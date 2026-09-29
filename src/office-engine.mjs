@@ -8,9 +8,9 @@ export const platforms = [
 ];
 const roles = ['Стажёр','Менеджер','Бухгалтер','Дизайнер','У кулера','Аналитик','Разработчик','У принтера','Директор'];
 const positions = [[520,1030],[2090,1030],[420,810],[1390,810],[2220,810],[300,590],[1150,590],[2080,590],[1480,370]];
-export const documents = [[740,1030],[1030,810],[1600,590],[2130,370]];
+export const documents = [[640,1030],[1200,810],[1840,590],[2480,370]];
 export const hazards = [{x:790,y:1018,w:92,h:12,type:'spill'},{x:1260,y:798,w:110,h:12,type:'cable'},{x:1860,y:578,w:105,h:12,type:'laser'},{x:1680,y:358,w:105,h:12,type:'laser'}];
-export const doors = [{x:870,y:1030,h:150,locked:true},{x:1480,y:810,h:150,locked:true},{x:1800,y:590,h:150,locked:true}];
+export const doors = [{x:780,y:1030,h:150,locked:true},{x:1580,y:810,h:150,locked:true},{x:2380,y:590,h:150,locked:true}];
 export const SCREEN_WIDTH = 800;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function createGame(){return {
@@ -32,10 +32,8 @@ export function updateGame(s,input,dt){
   if(s.freeze>0){s.freeze-=dt;return;}
   const p=s.player;
   s.screenTimer=Math.max(0,s.screenTimer-dt);
-  const nextScreen=Math.floor(p.x/SCREEN_WIDTH);
-  if(nextScreen!==s.screen){s.screen=nextScreen;s.screenTimer=45;s.message=`Экран ${s.screen+1}: ищи документ и выход.`;}
-  const roomStart=s.screen*SCREEN_WIDTH+22,roomEnd=Math.min(WIDTH-22,(s.screen+1)*SCREEN_WIDTH-22);
-  if(p.x<roomStart)p.x=roomStart;if(p.x>roomEnd)p.x=roomEnd;
+  const roomStart=s.screen*SCREEN_WIDTH+22,roomEnd=Math.min(WIDTH-22,(s.screen+1)*SCREEN_WIDTH-10);
+  if(p.x<roomStart)p.x=roomStart;
   if(s.screenTimer<=0){p.x=roomStart;p.y=platforms.find(f=>f.y===1030)?.y||1030;p.vy=0;p.grounded=true;s.screenTimer=45;s.hp=3;s.message='Время вышло. Начало текущего экрана.';s.shake=.25;}
   for(const k of ['dash','dashCooldown','attack','attackCooldown','drop','coyote'])p[k]=Math.max(0,p[k]-dt);
   if(p.grounded)p.coyote=.1;
@@ -48,8 +46,10 @@ export function updateGame(s,input,dt){
   if(p.dash>0){p.vy=0;s.ghosts.push({x:p.x,y:p.y,face:p.face,life:.22});}
   const previousX=p.x;
   physics(p,dt,p.drop>0);
-  for(const door of doors){
-    if(door.locked&&Math.abs(p.y-door.y)<32&&Math.abs(p.x-door.x)<28&&Math.abs(previousX-door.x)>Math.abs(p.x-door.x)){p.x=previousX;p.vx=0;s.message=`Дверь закрыта. Нужны документы: ${Math.min(4,doors.indexOf(door)+1)}.`;}
+  if(p.x>roomEnd){
+    const needs=s.screen+1;
+    if(s.keys>=needs&&s.screen<Math.ceil(WIDTH/SCREEN_WIDTH)-1){s.screen++;s.screenTimer=45;p.x=s.screen*SCREEN_WIDTH+35;s.message=`Экран ${s.screen+1}: документ найден. Ищи следующий выход.`;}
+    else {p.x=roomEnd;p.vx=0;s.message=`Выход закрыт. Найди документ ${needs}/4 в этой комнате.`;}
   }
   for(const doc of s.documents){if(!doc.got&&Math.abs(doc.x-p.x)<30&&Math.abs(doc.y-p.y)<55){doc.got=true;s.keys++;s.message=`Документ ${s.keys}/4 забран. Двери ждут пропуск.`;burst(s,doc.x,doc.y-30,12,'#ffe18a');}}
   for(const hazard of hazards){if(Math.abs(p.x-(hazard.x+hazard.w/2))<hazard.w/2+15&&Math.abs(p.y-hazard.y)<34&&p.drop<=0&&p.invuln<=0){p.invuln=1.2;s.hp--;p.vx=-p.face*330;p.vy=-280;s.shake=.25;s.message='Осторожно! Леха потерял HP на опасной зоне.';if(s.hp<=0){p.x=s.checkpoint;p.y=platforms.find(f=>f.y===s.checkpoints[s.checkpoint]?f.y:1030)||1030;p.hp=3;s.hp=3;s.message='Рестарт с чекпоинта. Офис стал ещё злее.';}}}
