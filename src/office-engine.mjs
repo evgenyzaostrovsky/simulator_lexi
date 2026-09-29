@@ -11,11 +11,12 @@ const positions = [[520,1030],[2090,1030],[420,810],[1390,810],[2220,810],[300,5
 export const documents = [[740,1030],[1030,810],[1600,590],[2130,370]];
 export const hazards = [{x:790,y:1018,w:92,h:12,type:'spill'},{x:1260,y:798,w:110,h:12,type:'cable'},{x:1860,y:578,w:105,h:12,type:'laser'},{x:1680,y:358,w:105,h:12,type:'laser'}];
 export const doors = [{x:870,y:1030,h:150,locked:true},{x:1480,y:810,h:150,locked:true},{x:1800,y:590,h:150,locked:true}];
+export const SCREEN_WIDTH = 800;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function createGame(){return {
   player:{x:110,y:1030,vx:0,vy:0,face:1,grounded:true,jumps:0,coyote:.1,dash:0,dashCooldown:0,attack:0,attackCooldown:0,drop:0,invuln:0},
   staff:positions.map(([x,y],i)=>({x,y,vx:0,vy:0,face:-1,home:x,floor:y,stun:0,panic:0,done:false,name:roles[i],color:['#d99e59','#9baabd','#c48e94'][i%3]})),
-  score:0,documents:documents.map(([x,y],i)=>({x,y,got:false,pulse:i})),keys:0,checkpoints:[110,110,110],checkpoint:0,hp:3,time:0,rage:0,shake:0,freeze:0,particles:[],ghosts:[],message:'Собери 4 срочных документа и раздай задачи.',won:false
+  score:0,documents:documents.map(([x,y],i)=>({x,y,got:false,pulse:i})),keys:0,checkpoints:[110,110,110],checkpoint:0,screen:0,screenTimer:45,hp:3,time:0,rage:0,shake:0,freeze:0,particles:[],ghosts:[],message:'Экран 1: собери документ и найди выход.',won:false
 };}
 export function physics(p,dt,drop=false){
   const oldY=p.y;p.x=clamp(p.x+p.vx*dt,24,WIDTH-24);p.vy+=1500*dt;p.y+=p.vy*dt;p.grounded=false;
@@ -30,6 +31,12 @@ export function updateGame(s,input,dt){
   dt=Math.min(dt,1/30);s.time+=dt;s.rage=Math.max(0,s.rage-dt);s.shake=Math.max(0,s.shake-dt);
   if(s.freeze>0){s.freeze-=dt;return;}
   const p=s.player;
+  s.screenTimer=Math.max(0,s.screenTimer-dt);
+  const nextScreen=Math.floor(p.x/SCREEN_WIDTH);
+  if(nextScreen!==s.screen){s.screen=nextScreen;s.screenTimer=45;s.message=`Экран ${s.screen+1}: ищи документ и выход.`;}
+  const roomStart=s.screen*SCREEN_WIDTH+22,roomEnd=Math.min(WIDTH-22,(s.screen+1)*SCREEN_WIDTH-22);
+  if(p.x<roomStart)p.x=roomStart;if(p.x>roomEnd)p.x=roomEnd;
+  if(s.screenTimer<=0){p.x=roomStart;p.y=platforms.find(f=>f.y===1030)?.y||1030;p.vy=0;p.grounded=true;s.screenTimer=45;s.hp=3;s.message='Время вышло. Начало текущего экрана.';s.shake=.25;}
   for(const k of ['dash','dashCooldown','attack','attackCooldown','drop','coyote'])p[k]=Math.max(0,p[k]-dt);
   if(p.grounded)p.coyote=.1;
   if(input.jump){input.jump=false;if(p.jumps<2){p.vy=-620;p.jumps=p.grounded||p.coyote>0?1:Math.max(1,p.jumps)+1;p.grounded=false;p.coyote=0;burst(s,p.x,p.y,8,'#d5d8bb');}}

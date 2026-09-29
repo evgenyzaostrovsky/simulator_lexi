@@ -1,4 +1,4 @@
-import {WIDTH,HEIGHT,platforms,documents,hazards,doors} from './office-engine.mjs';
+import {WIDTH,HEIGHT,platforms,documents,hazards,doors,SCREEN_WIDTH} from './office-engine.mjs';
 import {scenery} from './office-scenery.mjs';
 
 const VIEW_W=960,VIEW_H=540,ZOOM=1.16;
@@ -88,6 +88,7 @@ export function createRenderer(canvas){
     for(let i=0;i<s.staff.length;i++)art.shape(82+i*17,60,12,5,i<s.score?'#eec071':'#43605b',i<s.score?'#b78947':'#2d4845',1);
     text(`${s.score} / ${s.staff.length}`,244,38,12,'#e9d5a4','right');
     text(`HP ${'♥'.repeat(s.hp)}${'♡'.repeat(3-s.hp)}  •  ДОКУМЕНТЫ ${s.keys}/4`,270,79,10,'#f0d49e');
+    panel(w/2-104,16,208,31);text(`ЭКРАН ${s.screen+1}  •  ВРЕМЯ ${Math.ceil(s.screenTimer)}с`,w/2,37,11,s.screenTimer<10?'#ff9d79':'#e8d6a3','center');
     panel(18,h-55,251,37);text('SHIFT',31,h-33,11,'#f0d29b');text(s.player.dashCooldown>0?'ПЕРЕЗАРЯДКА':'РЫВОК ГОТОВ',84,h-33,10,s.player.dashCooldown>0?'#a5af9d':'#c8daa8');
     art.rect(29,h-24,225,2,'#324c48');art.rect(29,h-24,225*Math.max(0,1-s.player.dashCooldown/.7),2,'#d4b879');
     panel(w-180,16,162,82);text('ПЛАН ОФИСА',w-163,31,8,'#b9c3af');
@@ -100,9 +101,9 @@ export function createRenderer(canvas){
     art.rect(0,0,w,h,'#192e32');
     if(!ready){text(failed?'Не удалось загрузить графику. Обновите страницу.':'ЗАГРУЖАЕМ ОФИС…',w/2,h/2,18,'#eddbb7','center');return;}
     if(!background)buildBackground();
-    const tx=Math.max(0,Math.min(WIDTH-worldW,s.player.x-worldW*.4));
+    const tx=Math.max(0,Math.min(WIDTH-worldW,s.screen*SCREEN_WIDTH+(SCREEN_WIDTH-worldW)/2));
     const ty=Math.max(0,Math.min(HEIGHT-worldH,s.player.y-worldH*.72));
-    camera.x+=(tx-camera.x)*(1-Math.exp(-8*dt));camera.y+=(ty-camera.y)*(1-Math.exp(-7*dt));
+    camera.x=tx;camera.y+=(ty-camera.y)*(1-Math.exp(-10*dt));
     g.save();g.scale(ZOOM,ZOOM);g.translate(-camera.x+(s.shake>0&&!reduced?(Math.random()-.5)*7:0),-camera.y);
     g.drawImage(background,0,0);
     for(const f of platforms){
