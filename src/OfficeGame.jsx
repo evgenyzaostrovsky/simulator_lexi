@@ -26,7 +26,7 @@ export default function OfficeGame(){
     window.addEventListener('keydown',down);window.addEventListener('keyup',up);window.addEventListener('blur',blur);
     function tick(now){
       const dt=Math.min((now-(last||now))/1000,.033);last=now;
-      if(!pause.current)updateGame(s,input,dt);
+      if(!pause.current&&draw.isReady())updateGame(s,input,dt);
       draw(s,pause.current?0:dt);
       const status=s.score+s.message;if(status!==published){published=status;setHud({score:s.score,message:s.message});}
       frame=requestAnimationFrame(tick);
