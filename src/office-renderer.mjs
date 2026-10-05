@@ -16,9 +16,9 @@ export function createRenderer(canvas){
   const art=scenery(g),worldW=w/ZOOM,worldH=h/ZOOM;
   const camera={x:0,y:HEIGHT-worldH};
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let wall,sprites,meme,ready=false,failed=false;
+  let wall,sprites,boar,meme,ready=false,failed=false;
   load('/rage.png').then(img=>{meme=img;}).catch(()=>{});
-  const loaded=Promise.all([load('/art/office-wall.png'),load('/art/characters.png')]).then(images=>{[wall,sprites]=images;ready=true;}).catch(()=>{failed=true;});
+  const loaded=Promise.all([load('/art/office-wall.png'),load('/art/characters.png'),load('/art/boar-hero.png')]).then(images=>{[wall,sprites,boar]=images;ready=true;}).catch(()=>{failed=true;});
   const text=(s,x,y,size=14,color='#eadbbb',align='left')=>{g.fillStyle=color;g.font=`600 ${size}px "Trebuchet MS",sans-serif`;g.textAlign=align;g.fillText(s,x,y);};
   const panel=(x,y,pw,ph)=>{art.shape(x,y,pw,ph,'#233c3cef','#10292aef',5);g.strokeStyle='#e3c89135';g.lineWidth=1;g.strokeRect(x+3,y+3,pw-6,ph-6);};
   let background;
@@ -41,7 +41,9 @@ export function createRenderer(canvas){
     const running=Math.abs(p.vx||0)>45,air=!p.grounded;
     const phase=time*15+index*.9;
     let cell=hero?(p.attack>0?3:running||air?1+(Math.floor(time*10)%2):0):4+index%4;
-    const [sx,sy,sw,sh]=SPRITES[cell];
+    const [sx,sy,sw,sh]=hero
+      ? [(cell%2)*boar.naturalWidth/2,Math.floor(cell/2)*boar.naturalHeight/2,boar.naturalWidth/2,boar.naturalHeight/2]
+      : SPRITES[cell];
     const fullHeight=hero?121:115,scale=fullHeight/sh,fullWidth=sw*scale;
     const bounce=reduced?0:running&&p.grounded?Math.abs(Math.sin(phase))*4:Math.sin(time*2.6+index)*.7;
     const jumpTilt=hero&&air?Math.max(-.1,Math.min(.1,p.vy*.0002)):0;
@@ -51,7 +53,7 @@ export function createRenderer(canvas){
     g.rotate(p.dash>0?.16:p.stun>0?-.16:jumpTilt);
     const squash=hero&&p.attack>0?1.035:1;
     g.scale(squash,1/squash);
-    g.drawImage(sprites,sx,sy,sw,sh,-fullWidth*.48,-fullHeight+5,fullWidth,fullHeight);
+    g.drawImage(hero?boar:sprites,sx,sy,sw,sh,-fullWidth*.48,-fullHeight+5,fullWidth,fullHeight);
     g.restore();
     if(!hero&&alpha===1){
       const label=p.done?'✓ ПРИНЯТО':p.panic?'!!!':p.name;
@@ -83,7 +85,7 @@ export function createRenderer(canvas){
   function hud(s){
     panel(18,16,240,66);
     // Portrait badge uses the actual hero sprite.
-    g.save();g.beginPath();g.arc(48,49,23,0,7);g.clip();art.rect(23,23,50,52,'#816843');g.drawImage(sprites,60,20,240,260,21,19,57,65);g.restore();
+    g.save();g.beginPath();g.arc(48,49,23,0,7);g.clip();art.rect(23,23,50,52,'#816843');g.drawImage(boar,boar.naturalWidth*.14,boar.naturalHeight*.03,boar.naturalWidth*.31,boar.naturalHeight*.24,21,19,57,65);g.restore();
     text('ЛЕХА',82,37,13,'#ffe2a3');text('ОТДЕЛ СРОЧНЫХ ЗАДАЧ',82,51,8,'#bdc3ab');
     for(let i=0;i<s.staff.length;i++)art.shape(82+i*17,60,12,5,i<s.score?'#eec071':'#43605b',i<s.score?'#b78947':'#2d4845',1);
     text(`${s.score} / ${s.staff.length}`,244,38,12,'#e9d5a4','right');
