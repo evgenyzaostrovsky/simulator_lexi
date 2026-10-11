@@ -3,6 +3,8 @@ import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js'
 import {KEY_ROWS,MISSING_KEYS,ATTACK_DURATION} from './office3d-combat.mjs';
 import {move} from './office3d-controller.mjs';
 
+import {BOAR_SHAPE} from './boar-reference-shape.mjs';
+
 const UP=new T.Vector3(0,1,0);
 function material(color,roughness=.85){return new T.MeshStandardMaterial({color,roughness});}
 function mesh(parent,geometry,mat,x=0,y=0,z=0){const obj=new T.Mesh(geometry,mat);obj.position.set(x,y,z);obj.castShadow=true;obj.receiveShadow=true;parent.add(obj);return obj;}
@@ -11,23 +13,32 @@ function rounded(parent,mat,x,y,z,w,h,d,r=.03){return mesh(parent,new RoundedBox
 
 // Actual geometric tapered locks, distributed over an ellipsoid. No camera-facing
 // animal cards: the silhouette, face, fingers and coat remain volumetric at any angle.
-function coat(parent,center,radii,count,length,seed=1){
+function coat(parent,center,radii,count,length,seed=1,comb=[0,-1,-.25]){
   const geo=new T.BufferGeometry();
-  geo.setAttribute('position',new T.Float32BufferAttribute([
-    -.42,0,0,.42,0,0,.21,.62,.14, -.42,0,0,.21,.62,.14,0,1,.32,
-    0,0,-.3,0,0,.3,.12,.62,.16, 0,0,-.3,.12,.62,.16,0,1,.32,
-  ],3));geo.computeVertexNormals();
-  const mat=new T.MeshStandardMaterial({color:'#ddd0b4',roughness:1,side:T.DoubleSide});
+  // Three narrow curved strands per lock, rather than straight radial spikes.
+  const positions=[],shades=[];
+  for(let strand=0;strand<3;strand++){
+    const point=(t,side)=>[(strand-1)*.28+Math.sin(t*3+strand)*.12+side*.12*(1-t),t*(1-strand*.09),t*t*.22+strand*.035];
+    for(let segment=0;segment<4;segment++){
+      const a=segment/4,b=(segment+1)/4;
+      for(const [t,s] of [[a,-1],[a,1],[b,1],[a,-1],[b,1],[b,-1]]){
+        positions.push(...point(t,s));const c=.68+t*.32;shades.push(c,c,c);
+      }
+    }
+  }
+  geo.setAttribute('position',new T.Float32BufferAttribute(positions,3));geo.setAttribute('color',new T.Float32BufferAttribute(shades,3));geo.computeVertexNormals();
+  const mat=new T.MeshStandardMaterial({color:'#d5bd92',vertexColors:true,roughness:1,side:T.DoubleSide});
   const fur=new T.InstancedMesh(geo,mat,count),dummy=new T.Object3D(),color=new T.Color();
   const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   for(let i=0;i<count;i++){
     const y=1-2*(i+.5)/count,a=i*2.399963,n=new T.Vector3(Math.sqrt(1-y*y)*Math.cos(a),y,Math.sqrt(1-y*y)*Math.sin(a));
     dummy.position.set(center[0]+n.x*radii[0],center[1]+n.y*radii[1],center[2]+n.z*radii[2]);
     const normal=new T.Vector3(n.x/radii[0],n.y/radii[1],n.z/radii[2]).normalize();
-    const direction=normal.multiplyScalar(.8).add(new T.Vector3(0,-.45,-.22)).normalize();
-    dummy.quaternion.setFromUnitVectors(UP,direction);dummy.rotateY(rand()*Math.PI*2);
-    const size=.6+rand()*.8;dummy.scale.set(length*.20*size,length*size,length*.2*size);dummy.updateMatrix();fur.setMatrixAt(i,dummy.matrix);
-    color.setHSL(.105+rand()*.025,.18+rand()*.15,.36+rand()*.36);fur.setColorAt(i,color);
+    const flow=new T.Vector3(...comb);const tangent=flow.addScaledVector(normal,-flow.dot(normal)).normalize();
+    const direction=normal.clone().multiplyScalar(.24).addScaledVector(tangent,.97).normalize();
+    dummy.quaternion.setFromUnitVectors(UP,direction);dummy.rotateY((rand()-.5)*1.1);
+    const size=.65+rand()*.7;dummy.scale.set(length*.23*size,length*size,length*.3*size);dummy.updateMatrix();fur.setMatrixAt(i,dummy.matrix);
+    color.setHSL(.10+rand()*.018,.13+rand()*.15,.49+rand()*.29);fur.setColorAt(i,color);
   }
   fur.castShadow=true;fur.receiveShadow=true;parent.add(fur);return fur;
 }
@@ -62,63 +73,86 @@ function keyboard(parent){
 }
 
 export function createBoar(scene){
-  const root=new T.Group();root.name='Leha — volumetric boar';root.position.set(6,0,4.5);scene.add(root);
+  const root=new T.Group();root.name='Leha — reference sculpt';root.position.set(6,0,4.5);scene.add(root);
   const body=new T.Group();root.add(body);
-  const fur=material('#a99472'),face=material('#51443d'),hoof=material('#272421',.55),inner=material('#655349'),eye=material('#d7b783',.35),black=material('#10100e',.25);
-  ell(body,fur,0,1.04,-.04,.64,.78,.47);coat(body,[0,1.04,-.04],[.64,.78,.47],8500,.15,2);
-  // Hunched neck and prominent shoulder mane from the reference.
-  ell(body,fur,0,1.58,-.12,.48,.45,.4);coat(body,[0,1.58,-.12],[.48,.45,.4],2200,.20,4);
-  const head=new T.Group();head.position.set(0,1.74,.17);body.add(head);
-  ell(head,fur,0,0,.02,.41,.36,.37);coat(head,[0,0,.02],[.41,.36,.37],2500,.085,6);
-  ell(head,face,0,-.10,.34,.27,.19,.34);
-  ell(head,face,0,-.065,.57,.245,.18,.09);
-  for(const x of [-.103,.103]){
-    const rim=mesh(head,new T.TorusGeometry(.065,.018,10,24),inner,x,-.045,.644);rim.scale.set(.83,1.15,.65);
-    ell(head,black,x,-.045,.644,.045,.065,.012);
-  }
-  // Muzzle crease and lower lip keep the snout distinct from a sphere.
-  ell(head,hoof,0,-.224,.39,.18,.017,.17);
+  const fur=material('#a9987c'),face=material('#494443'),hoof=material('#29282a',.55),inner=material('#3c3430'),eye=material('#c3a782',.3),black=material('#09090b',.28);
+  // A subtle, non-image pore bump prevents the muzzle from looking like smooth plastic.
+  const pores=new Uint8Array(128*128*4);let noise=123;
+  for(let i=0;i<pores.length;i+=4){noise=(Math.imul(noise,1664525)+1013904223)>>>0;pores[i]=pores[i+1]=pores[i+2]=80+(noise%130);pores[i+3]=255;}
+  const bump=new T.DataTexture(pores,128,128);bump.wrapS=bump.wrapT=T.RepeatWrapping;bump.repeat.set(3,3);bump.needsUpdate=true;face.bumpMap=bump;face.bumpScale=.012;
+  const {belly,shoulders}=BOAR_SHAPE;
+  ell(body,fur,...belly.center,...belly.radii);coat(body,belly.center,belly.radii,9000,.21,2);
+  ell(body,fur,...shoulders.center,...shoulders.radii);coat(body,shoulders.center,shoulders.radii,3500,.24,4,[0,-.4,-1]);
+  // Low heavy head blends into the hump, rather than sitting on a visible neck.
+  const head=new T.Group();head.name='Forward-set head';head.position.set(...BOAR_SHAPE.head);body.add(head);
+  ell(head,fur,0,0,0,...BOAR_SHAPE.skull);coat(head,[0,0,0],BOAR_SHAPE.skull,2700,.055,6,[0,-.3,-1]);
   for(const side of [-1,1]){
-    ell(head,face,side*.267,.047,.27,.12,.085,.065);
-    ell(head,eye,side*.266,.048,.319,.070,.047,.034);
-    ell(head,black,side*.259,.049,.349,.025,.038,.012);
-    ell(head,material('#fff5d5',.2),side*.26-.012,.066,.359,.009,.01,.006);
-    const brow=ell(head,fur,side*.265,.112,.32,.132,.040,.053);brow.rotation.z=side*.3;
-    const ear=new T.Group();ear.position.set(side*.30,.26,-.03);ear.rotation.z=-side*.38;head.add(ear);
-    // Curved pointed ears with a dark recessed interior.
-    const shape=new T.Shape();shape.moveTo(-.12,0);shape.quadraticCurveTo(-.15,.22,0,.40);shape.quadraticCurveTo(.18,.18,.12,0);shape.closePath();
-    mesh(ear,new T.ExtrudeGeometry(shape,{depth:.055,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:.025,bevelThickness:.022}),fur,0,0,0);
-    const inside=mesh(ear,new T.ShapeGeometry(shape),inner,0,.03,.084);inside.scale.set(.65,.76,1);
-    coat(ear,[0,.13,.02],[.10,.16,.045],260,.045,side+10);
+    ell(head,fur,side*.25,-.17,.13,.19,.16,.23);
+    coat(head,[side*.25,-.17,.13],[.19,.16,.23],650,.065,15+side,[side*.2,-1,-.2]);
+  }
+  // Continuous tapered muzzle: broad bridge narrowing into the snout, not stacked balls.
+  const rings=[
+    [-.05,.32,.24,-.08],[.12,.29,.21,-.085],[.30,.235,.175,-.095],
+    [.48,.205,.155,-.078],[.61,.225,.164,-.048],
+  ],v=[],uvs=[],indices=[],segments=40;
+  for(let i=0;i<rings.length;i++){const [z,rx,ry,cy]=rings[i];for(let j=0;j<=segments;j++){const a=j/segments*Math.PI*2;v.push(Math.cos(a)*rx,cy+Math.sin(a)*ry,z);uvs.push(j/segments,i/(rings.length-1));}}
+  for(let i=0;i<rings.length-1;i++)for(let j=0;j<segments;j++){const a=i*(segments+1)+j,b=a+segments+1;indices.push(a,a+1,b,b,a+1,b+1);}
+  const bridge=new T.BufferGeometry();bridge.setAttribute('position',new T.Float32BufferAttribute(v,3));bridge.setAttribute('uv',new T.Float32BufferAttribute(uvs,2));bridge.setIndex(indices);bridge.computeVertexNormals();mesh(head,bridge,face).name='Tapered muzzle';
+  // Short grey hair over the bridge, but a bare dark leathery nose disc.
+  coat(head,[0,-.035,.28],[.23,.155,.29],1800,.025,72,[0,-.25,-1]);
+  const nose=ell(head,face,0,-.047,.614,.231,.172,.065);nose.rotation.x=-.08;
+  for(const x of [-.098,.098]){
+    const rim=mesh(head,new T.TorusGeometry(.061,.012,10,28),face,x,-.035,.672);rim.scale.set(.74,1.13,.7);rim.rotation.z=x>0?-.18:.18;
+    const hole=ell(head,new T.MeshBasicMaterial({color:'#080707'}),x,-.035,.674,.039,.061,.006);hole.rotation.z=x>0?-.18:.18;
+  }
+  ell(head,hoof,0,-.222,.35,.178,.016,.23);
+  for(const side of [-1,1]){
+    const socket=ell(head,inner,side*.282,.066,.278,.10,.052,.048);socket.rotation.z=side*.16;
+    ell(head,eye,side*.279,.062,.339,.054,.026,.014);
+    ell(head,black,side*.274,.062,.352,.020,.023,.007);
+    ell(head,material('#fff0ce',.2),side*.275-.009,.070,.359,.006,.006,.003);
+    // Upper eyelids cut into the eyes; inward-sloping brows give the same scowl.
+    const lid=ell(head,face,side*.281,.081,.353,.072,.015,.012);lid.rotation.z=side*.30;
+    const brow=ell(head,fur,side*.27,.115,.291,.151,.046,.071);brow.rotation.z=side*.29;
+    coat(head,[side*.27,.122,.289],[.15,.039,.07],380,.035,side+80,[side,-.1,-.15]);
+    const ear=new T.Group();ear.name=side<0?'Left folded ear':'Right folded ear';ear.position.set(side*.31,.22,-.17);ear.rotation.set(-.40,side*.65,-side*.43);head.add(ear);
+    const shape=new T.Shape();shape.moveTo(-.13,0);shape.quadraticCurveTo(-.15,.16,-.07,BOAR_SHAPE.earHeight);shape.quadraticCurveTo(.06,.26,.16,.035);shape.closePath();
+    mesh(ear,new T.ExtrudeGeometry(shape,{depth:.045,bevelEnabled:true,bevelSegments:3,steps:1,bevelSize:.02,bevelThickness:.025}),fur);
+    const inside=mesh(ear,new T.ShapeGeometry(shape),inner,0,.015,.074);inside.scale.set(.72,.80,1);
+    coat(ear,[-.008,.095,.002],[.12,.12,.045],300,.04,side+10,[0,1,-.5]);
+    for(const [x,y] of [[-.10,.06],[-.10,.15],[-.06,.23],[.07,.12]])coat(ear,[x,y,.045],[.028,.037,.017],65,.032,Math.round(y*100)+side,[0,1,0]);
   }
   const legs=[];
   for(const side of [-1,1]){
-    const leg=new T.Group();leg.position.set(side*.30,.59,0);root.add(leg);legs.push(leg);
-    ell(leg,fur,0,-.18,0,.20,.31,.21);coat(leg,[0,-.18,0],[.20,.30,.21],650,.08,side+30);
-    for(const toe of [-1,1])ell(leg,hoof,toe*.070,-.49,.115,.078,.10,.20);
+    const leg=new T.Group();leg.position.set(side*BOAR_SHAPE.legSpacing,.50,-.025);root.add(leg);legs.push(leg);
+    ell(leg,face,0,-.16,0,.18,.25,.20);
+    coat(leg,[0,-.10,-.015],[.18,.22,.18],800,.085,side+30,[side*.3,-1,.1]);
+    for(const toe of [-1,1]){
+      const foot=rounded(leg,hoof,toe*.082,-.42,.12,.15,.16,.32,.036);foot.rotation.y=side*.12;
+      const ridge=ell(leg,face,toe*.082,-.375,.13,.065,.095,.115);ridge.rotation.x=.22;
+    }
   }
-  const arms=new T.Group();arms.position.y=1.24;body.add(arms);
+  const arms=new T.Group();arms.position.y=1.17;body.add(arms);
   for(const side of [-1,1]){
-    const upper=ell(arms,fur,side*.52,.025,.16,.21,.32,.22);upper.rotation.z=side*.22;
-    coat(arms,[side*.52,.025,.16],[.21,.32,.22],900,.10,side+40);
-    const lower=ell(arms,fur,side*.48,-.12,.43,.19,.19,.32);lower.rotation.y=side*-.3;
-    coat(arms,[side*.48,-.12,.43],[.19,.19,.30],850,.08,side+60);
+    ell(arms,fur,side*.61,.10,.19,.23,.30,.25);
+    coat(arms,[side*.61,.10,.19],[.23,.30,.25],1400,.15,side+40,[side*.1,-1,.2]);
+    ell(arms,fur,side*.57,-.035,.44,.20,.19,.32);
+    coat(arms,[side*.57,-.035,.44],[.20,.19,.32],1200,.12,side+60,[side*.15,-.6,.7]);
   }
-  const board=keyboard(arms);board.position.set(0,-.15,.70);board.rotation.x=.12;
+  const board=keyboard(arms);board.position.set(0,-.115,.79);board.rotation.x=.10;board.scale.set(1.06,1.05,1);
   for(const side of [-1,1]){
-    ell(arms,face,side*.53,-.15,.71,.15,.15,.10);
-    for(let i=0;i<3;i++){const finger=ell(arms,hoof,side*(.48+i*.03),-.09-i*.065,.80,.085,.028,.05);finger.rotation.z=side*-.25;}
+    ell(arms,face,side*.57,-.105,.80,.16,.14,.115);
+    for(let i=0;i<3;i++){const finger=ell(arms,hoof,side*(.52+i*.022),-.04-i*.061,.891,.09,.027,.036);finger.rotation.z=side*-.32;}
   }
-  const tailCurve=new T.CatmullRomCurve3([new T.Vector3(0,.82,-.45),new T.Vector3(.12,.80,-.60),new T.Vector3(.17,.91,-.62),new T.Vector3(.09,.95,-.59)]);
-  mesh(body,new T.TubeGeometry(tailCurve,16,.022,6,false),fur);
+  const tailCurve=new T.CatmullRomCurve3([new T.Vector3(0,.70,-.64),new T.Vector3(.1,.69,-.76),new T.Vector3(.15,.77,-.77),new T.Vector3(.1,.8,-.73)]);
+  mesh(body,new T.TubeGeometry(tailCurve,16,.017,6,false),fur);
   return {root,animate(time,moving,attack){
-    const phase=1-attack/ATTACK_DURATION;
-    const swing=attack>0?Math.sin(phase*Math.PI):0;
+    const phase=1-attack/ATTACK_DURATION,swing=attack>0?Math.sin(phase*Math.PI):0;
     legs.forEach((leg,i)=>leg.rotation.x=moving?Math.sin(time*11+i*Math.PI)*.46:0);
-    body.position.y=moving?Math.abs(Math.sin(time*11))*.035:Math.sin(time*2)*.008;
+    body.position.y=moving?Math.abs(Math.sin(time*11))*.035:Math.sin(time*2)*.006;
     body.rotation.z=moving?Math.sin(time*11)*.025:0;
     arms.rotation.x=-swing*.9;arms.position.z=swing*.32;
-    head.rotation.y=Math.sin(time*.7)*.045;head.rotation.x=attack>0?swing*.12:0;
+    head.rotation.y=Math.sin(time*.7)*.018;head.rotation.x=attack>0?swing*.12:-.025;
   }};
 }
 

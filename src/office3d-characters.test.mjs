@@ -20,6 +20,10 @@ test('volumetric hero has missing switches, finite geometry and animated limbs',
     assert.deepEqual(missing.sort(),[...MISSING_KEYS].sort());
     assert.ok(caps.every(k=>!MISSING_KEYS.has(k)));
     assert.ok(furInstances>10000);
+    const muzzle=hero.root.getObjectByName('Tapered muzzle');
+    assert.ok(muzzle,'the snout must have a continuous sculpted bridge');
+    assert.ok(muzzle.geometry.attributes.normal.getX(0)>0,'muzzle faces must point outward');
+    assert.equal(muzzle.geometry.attributes.uv.count,muzzle.geometry.attributes.position.count);
     hero.animate(.5,true,.3);hero.root.updateMatrixWorld(true);
     hero.root.traverse(o=>assert.ok(o.matrixWorld.elements.every(Number.isFinite)));
   }finally{if(original===undefined)delete globalThis.document;else globalThis.document=original;}
