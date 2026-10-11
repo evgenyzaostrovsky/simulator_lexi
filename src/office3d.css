@@ -1,0 +1,9 @@
+.office-three{max-width:1200px;margin:24px auto;color:#eee7d5;text-align:left}
+.office-three-heading{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;background:#202f2b;border-radius:16px 16px 0 0}
+.office-three-heading small,.office-three-pause small{letter-spacing:.19em;color:#c4b18a;font-size:11px}
+.office-three-heading h2{margin:5px 0;font-size:24px}.office-three-heading>span{font-size:12px;color:#b7c2b9}
+.office-three-viewport{position:relative;height: min(72vh,760px);min-height:420px;overflow:hidden;background:#35423a}
+.office-game .office-three-viewport canvas{display:block;width:100%;height:100%;border:0;border-radius:0;box-shadow:none}
+.office-three-hud{position:absolute;z-index:2;left:24px;top:22px;display:flex;flex-direction:column;gap:5px;text-shadow:0 2px 8px #000;pointer-events:none}.office-three-hud span{font-size:12px}
+.office-three-pause{position:absolute;inset:0;z-index:3;display:grid;place-items:center;background:linear-gradient(90deg,#14241ee8,#14241e70);padding:25px}.office-three-pause>div{max-width:550px;width:100%}.office-three-pause h2{font-size:clamp(30px,4vw,52px);line-height:1.05;margin:18px 0;color:#fff7e6}.office-three-pause p{font-size:14px;line-height:1.8;color:#d3d5c8}.office-three-pause button{background:#d1b886;color:#23332c;border:0;padding:16px 26px;border-radius:5px;font-weight:700;cursor:pointer}.office-three-controls{margin:0;padding:17px 24px;background:#202f2b;font-size:11px;line-height:1.8;border-radius:0 0 16px 16px;color:#bfc6bb}
+@media(max-width:650px){.office-three-heading>span{display:none}.office-three-heading{padding:14px}.office-three-hud{left:14px}.office-three-controls{font-size:10px}}

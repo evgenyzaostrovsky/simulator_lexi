@@ -1,42 +1,45 @@
 import React,{useEffect,useRef,useState} from 'react';
-import * as THREE from 'three';
+import * as T from 'three';
+import {createOffice,createBoar} from './office3d-world';
+import {move,roomAt} from './office3d-controller.mjs';
 import './game.css';
+import './office3d.css';
 
-function mat(color,roughness=.8){return new THREE.MeshStandardMaterial({color,roughness});}
-function box(parent,x,y,z,w,h,d,material){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y+h/2,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m;}
-function label(text,color='#f2d6a0'){const c=document.createElement('canvas');c.width=512;c.height=128;const x=c.getContext('2d');x.font='bold 42px Trebuchet MS';x.fillStyle=color;x.fillText(text,16,78);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true}));s.scale.set(4.8,1.2,1);return s;}
-function makeOffice(scene){
-  const floor=mat('#715b43'),wall=mat('#88715a'),trim=mat('#3e4543'),glass=mat('#496b70'),wood=mat('#654a35'),green=mat('#65715e'),white=mat('#d9d2b7');
-  box(scene,16,-.2,12,32,.4,24,floor);box(scene,16,0,-.3,32,5,.3,wall);box(scene,16,0,24,32,5,.3,wall);box(scene,-.3,0,12,.3,5,24,wall);box(scene,32.3,0,12,.3,5,wall);
-  for(const x of [8,16,24]){box(scene,x,0,0,.25,5,.4,trim);box(scene,x,0,23.6,.25,5,.4,trim);}
-  for(const z of [12]){box(scene,5,0,z,10,3,.22,wall);box(scene,19,0,z,10,3,.22,wall);}
-  for(const x of [16]){box(scene,x,0,4,.22,3,8,wall);box(scene,x,0,20,.22,3,8,wall);}
-  const rooms=[['OPEN OFFICE',2,2],['DESIGN TEAM',18,2],['BREAK ROOM',2,15],['BOSS OFFICE',18,15]];for(const [name,x,z] of rooms){const s=label(name);s.position.set(x+5,4.3,z);scene.add(s);}
-  for(const [x,z] of [[5,5],[10,5],[21,5],[27,5],[5,18],[10,18],[21,18],[27,18]]){box(scene,x,0,z,2.6,.85,1.2,wood);box(scene,x-.45,.85,z-.1,1.4,.8,.75,trim);box(scene,x-.28,1.65,z-.1,.95,.65,glass);box(scene,x+.65,.84,z+.3,.22,.1,.22,white);}
-  for(const [x,z] of [[14,4],[17,8],[14,18],[17,21]]){box(scene,x,0,z,.7,1.8,.7,white);box(scene,x+.36,.9,z,.05,.5,.45,glass);}
-  box(scene,28,0,20,2.4,1.2,1.1,wood);box(scene,28,1.2,20,2.4,2.8,1.1,green);const boss=label('КАБИНЕТ БОССА','#ffd77e');boss.position.set(28,4.2,18.5);scene.add(boss);
-  for(const [x,z] of [[7,2],[12,22],[30,3],[3,20]]){box(scene,x,0,z,.6,.6,.6,wood);for(let i=0;i<5;i++){const leaf=new THREE.Mesh(new THREE.ConeGeometry(.25,.9,5),green);leaf.position.set(x+Math.sin(i*2)*.4,.95,z+Math.cos(i*2)*.4);scene.add(leaf);}}
-  // Extra environmental detail: ceiling lights, framed art, rugs and lounge furniture.
-  for(const [x,z] of [[4,4],[12,4],[20,4],[28,4],[4,18],[12,18],[20,18],[28,18]]){box(scene,x,4.8,z,2.2,.08,.55,mat('#e8d8a4'));const glow=new THREE.PointLight('#ffdca4',1.2,6);glow.position.set(x,4.65,z);scene.add(glow);}
-  for(const [x,z,c] of [[3,1,'#6b8b82'],[13,1,'#b78f65'],[19,1,'#78939a'],[29,1,'#aa866c']]){box(scene,x,2.3,z,.08,1.1,1.5,trim);box(scene,x+.05,2.35,z,.02,.95,1.34,mat(c));}
-  for(const [x,z] of [[8,9],[24,9],[8,21],[24,21]]){box(scene,x,.02,z,3.2,.04,2.1,mat('#4c695f'));box(scene,x, .45,z+1.1,3.1,.7,.35,mat('#8d6c55'));box(scene,x-1.3,.45,z, .35,.7,2.1,mat('#8d6c55'));box(scene,x+1.3,.45,z,.35,.7,2.1,mat('#8d6c55'));}
-}
-function makePig(scene){
-  const root=new THREE.Group();root.position.set(5,0,5);scene.add(root);const fur=mat('#c9b18d'),dark=mat('#40342e'),hoof=mat('#292321'),key=mat('#d9d0b1'),keyDark=mat('#706b5b');
-  const body=new THREE.Mesh(new THREE.SphereGeometry(1.25,20,14));body.material=fur;body.scale.set(1.08,1.25,.9);body.position.y=1.7;body.castShadow=true;root.add(body);
-  const head=new THREE.Mesh(new THREE.SphereGeometry(.9,20,14));head.material=fur;head.scale.set(1.1,1,.95);head.position.set(0,3.05,.18);head.castShadow=true;root.add(head);
-  const snout=new THREE.Mesh(new THREE.SphereGeometry(.46,16,10));snout.material=dark;snout.scale.set(1,.72,.7);snout.position.set(0,2.95,.98);root.add(snout);
-  [-.32,.32].forEach(x=>{const e=new THREE.Mesh(new THREE.SphereGeometry(.09,10,8));e.material=mat('#161414');e.position.set(x,3.25,.92);root.add(e);});[-.58,.58].forEach(x=>{const ear=new THREE.Mesh(new THREE.ConeGeometry(.3,.65,4));ear.material=dark;ear.position.set(x,3.85,.15);ear.rotation.z=x>0?-.35:.35;root.add(ear);});
-  [-.65,.65].forEach(x=>{for(const z of [-.42,.42]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(.22,.27,.9,10));leg.material=fur;leg.position.set(x,.7,z);leg.castShadow=true;root.add(leg);const h=new THREE.Mesh(new THREE.SphereGeometry(.24,10,8));h.material=hoof;h.scale.set(1,.55,1);h.position.set(x,.2,z+.08);root.add(h);}});
-  const legs=[];[-.65,.65].forEach(x=>{for(const z of [-.42,.42]){const leg=root.children.find(o=>o.position.x===x&&o.position.z===z&&o.geometry?.type==='CylinderGeometry');if(leg)legs.push(leg);}});
-  const keyboard=new THREE.Group();box(keyboard,0,0,0,1.7,.12,.58,key);for(let i=0;i<6;i++)for(let j=0;j<3;j++)box(keyboard,-.7+i*.27,.12,-.2+j*.17,.18,.035,.1,keyDark);keyboard.position.set(0,1.85,1.1);keyboard.rotation.x=-.2;root.add(keyboard);root.userData={keyboard,legs};return root;
-}
 export default function OfficeGame(){
-  const host=useRef(null),[message,setMessage]=useState('WASD — бег · мышь — камера · E — удар клавиатурой');
-  useEffect(()=>{const el=host.current,scene=new THREE.Scene();scene.background=new THREE.Color('#1c2930');scene.fog=new THREE.Fog('#1c2930',26,48);const camera=new THREE.PerspectiveCamera(58,1,.1,100);const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;el.appendChild(renderer.domElement);scene.add(new THREE.HemisphereLight('#dfe1c9','#202b31',2));const sun=new THREE.DirectionalLight('#ffd6a0',3.5);sun.position.set(-8,18,8);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);scene.add(sun);makeOffice(scene);const pig=makePig(scene);const keys=new Set();let yaw=.35,pitch=.42,distance=8,vy=0,grounded=true,attack=0,last=0,raf;
-    const resize=()=>{const r=el.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix();};resize();window.addEventListener('resize',resize);const down=e=>{if(['KeyW','KeyA','KeyS','KeyD','Space','ShiftLeft','ShiftRight','KeyE'].includes(e.code)){e.preventDefault();keys.add(e.code);if(e.code==='Space'&&grounded){vy=7.8;grounded=false;}if(e.code==='KeyE'&&!e.repeat){attack=.45;pig.userData.keyboard.rotation.x=-1.3;setMessage('СРОЧНО! Кабан машет клавиатурой!');}}};const up=e=>keys.delete(e.code);window.addEventListener('keydown',down);window.addEventListener('keyup',up);
-    let dragging=false,lastX=0,lastY=0;const md=e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId);};const mm=e=>{if(!dragging)return;yaw-=(e.clientX-lastX)*.006;pitch=Math.max(.15,Math.min(.9,pitch-(e.clientY-lastY)*.004));lastX=e.clientX;lastY=e.clientY;};const mu=()=>dragging=false;renderer.domElement.addEventListener('pointerdown',md);renderer.domElement.addEventListener('pointermove',mm);renderer.domElement.addEventListener('pointerup',mu);renderer.domElement.addEventListener('pointercancel',mu);
-    function loop(now){const dt=Math.min((now-(last||now))/1000,.033);last=now;const dir=new THREE.Vector3((keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),0,(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0));const speed=keys.has('ShiftLeft')||keys.has('ShiftRight')?7.5:4.2;if(dir.lengthSq()){dir.normalize().applyAxisAngle(new THREE.Vector3(0,1,0),yaw);pig.position.addScaledVector(dir,speed*dt);pig.rotation.y=Math.atan2(dir.x,dir.z);pig.userData.legs.forEach((leg,i)=>leg.rotation.z=Math.sin(now*.02+i*Math.PI)*.22);}
-      vy-=18*dt;pig.position.y+=vy*dt;if(pig.position.y<=0){pig.position.y=0;vy=0;grounded=true;}pig.position.x=Math.max(1,Math.min(31,pig.position.x));pig.position.z=Math.max(1,Math.min(23,pig.position.z));attack=Math.max(0,attack-dt);if(!attack)pig.userData.keyboard.rotation.x=-.2;const target=pig.position.clone().add(new THREE.Vector3(0,1.8,0));const offset=new THREE.Vector3(Math.sin(yaw)*Math.cos(pitch)*distance,Math.sin(pitch)*distance,Math.cos(yaw)*Math.cos(pitch)*distance);camera.position.lerp(target.clone().add(offset),1-Math.exp(-9*dt));camera.lookAt(target);renderer.render(scene,camera);raf=requestAnimationFrame(loop);}raf=requestAnimationFrame(loop);return()=>{cancelAnimationFrame(raf);window.removeEventListener('resize',resize);window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);renderer.domElement.remove();renderer.dispose();};},[]);
-  return <section className="office-game office-3d"><div className="game-heading"><div><div className="label">02 / 3D ОФИСНЫЙ ПЕРЕПОЛОХ</div><h2>Кабан в здании.</h2></div><strong>КАБИНЕТ БОССА<br/><b>ОТКРЫТ</b></strong></div><p>WASD — двигаться · пробел — прыгать · Shift — ускорение · E — удар клавиатурой · зажми мышь и крути камеру</p><div ref={host} className="office-3d-view"/><p className="game-message" role="status">{message}</p></section>;
+  const host=useRef(null),start=useRef(()=>{});
+  const [active,setActive]=useState(false),[error,setError]=useState(''),[room,setRoom]=useState('Кабинет босса'),[away,setAway]=useState(false),[fallback,setFallback]=useState(false);
+  useEffect(()=>{
+    const el=host.current;let renderer;
+    try{renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});}catch{setError('Не удалось запустить WebGL. Попробуйте браузер с включённым аппаратным ускорением.');return;}
+    renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;el.appendChild(renderer.domElement);
+    const scene=new T.Scene();scene.background=new T.Color('#777c76');scene.add(new T.HemisphereLight('#e3efff','#61503a',1.6));
+    const sun=new T.DirectionalLight('#fff0d3',2.4);sun.position.set(-8,14,-12);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-17,right:17,top:17,bottom:-17,near:.5,far:50});sun.shadow.normalBias=.025;scene.add(sun);
+    const {obstacles,cameraObjects}=createOffice(scene),boar=createBoar(scene),camera=new T.PerspectiveCamera(58,1,.07,80);
+    const keys=new Set(),ray=new T.Raycaster(),target=new T.Vector3(),desired=new T.Vector3(),direction=new T.Vector3();
+    boar.root.rotation.y=Math.PI;
+    let yaw=0,pitch=.28,velocity=0,attack=0,locked=false,dragMode=false,dragging=false,frame,last=performance.now(),elapsed=0,awayTime=0,lastRoom='',lastAway=false;
+    const canvas=renderer.domElement;
+    const resize=()=>{const w=el.clientWidth,h=el.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();};const observer=new ResizeObserver(resize);observer.observe(el);resize();
+    const enableDrag=()=>{dragMode=true;locked=true;setActive(true);setFallback(true);};
+    start.current=()=>{if(dragMode){enableDrag();return;}try{const result=canvas.requestPointerLock();result?.catch(enableDrag);}catch{enableDrag();}};
+    const lock=()=>{locked=document.pointerLockElement===canvas;setActive(locked);keys.clear();};
+    const mouse=e=>{if(locked&&(!dragMode||dragging)){yaw-=e.movementX*.0024;pitch=T.MathUtils.clamp(pitch+e.movementY*.002,-.12,.95);}};
+    const down=e=>{if(!locked)return;if(e.code==='Escape'){locked=false;setActive(false);keys.clear();return;}if(['KeyW','KeyA','KeyS','KeyD','Space','ShiftLeft','ShiftRight','KeyE'].includes(e.code))e.preventDefault();keys.add(e.code);if(!e.repeat&&e.code==='Space'&&boar.root.position.y<=.001)velocity=5;if(!e.repeat&&e.code==='KeyE'&&attack<=0)attack=.5;};
+    const up=e=>keys.delete(e.code),blur=()=>{keys.clear();dragging=false;if(dragMode){locked=false;setActive(false);}},dragStart=()=>{dragging=true;},dragEnd=()=>{dragging=false;};
+    canvas.addEventListener('mousedown',dragStart);window.addEventListener('mouseup',dragEnd);
+    document.addEventListener('pointerlockchange',lock);document.addEventListener('mousemove',mouse);window.addEventListener('keydown',down);window.addEventListener('keyup',up);window.addEventListener('blur',blur);
+    function tick(now){
+      frame=requestAnimationFrame(tick);const dt=Math.min((now-last)/1000,.04);last=now;
+      let moving=false;
+      if(locked){elapsed+=dt;let x=Number(keys.has('KeyD'))-Number(keys.has('KeyA')),z=Number(keys.has('KeyS'))-Number(keys.has('KeyW'));const length=Math.hypot(x,z);moving=length>0;
+        if(moving){x/=length;z/=length;const dx=x*Math.cos(yaw)+z*Math.sin(yaw),dz=-x*Math.sin(yaw)+z*Math.cos(yaw),speed=keys.has('ShiftLeft')||keys.has('ShiftRight')?5.2:2.8;move(boar.root.position,dx*speed*dt,dz*speed*dt,obstacles);const angle=Math.atan2(dx,dz);boar.root.rotation.y+=Math.atan2(Math.sin(angle-boar.root.rotation.y),Math.cos(angle-boar.root.rotation.y))*Math.min(1,dt*14);}
+        velocity-=13*dt;boar.root.position.y=Math.max(0,boar.root.position.y+velocity*dt);if(boar.root.position.y===0)velocity=0;attack=Math.max(0,attack-dt);
+        const r=roomAt(boar.root.position.x,boar.root.position.z);if(r!==lastRoom){lastRoom=r;setRoom(r);}awayTime=r==='Кабинет босса'?0:awayTime+dt;const reminder=awayTime>60;if(reminder!==lastAway){lastAway=reminder;setAway(reminder);}
+      }
+      boar.animate(elapsed,moving,attack);target.copy(boar.root.position);target.y+=1.45;desired.set(Math.sin(yaw)*4.4,1+Math.sin(pitch)*4.4,Math.cos(yaw)*4.4).add(target);direction.copy(desired).sub(target);const distance=direction.length();direction.normalize();scene.updateMatrixWorld(true);ray.set(target,direction);ray.far=distance;const hit=ray.intersectObjects(cameraObjects,false)[0];camera.position.copy(target).addScaledVector(direction,hit?Math.max(.2,hit.distance-.2):distance);camera.lookAt(target);renderer.render(scene,camera);
+    }
+    frame=requestAnimationFrame(tick);
+    return()=>{cancelAnimationFrame(frame);observer.disconnect();canvas.removeEventListener('mousedown',dragStart);window.removeEventListener('mouseup',dragEnd);if(document.pointerLockElement===canvas)document.exitPointerLock();document.removeEventListener('pointerlockchange',lock);document.removeEventListener('mousemove',mouse);window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('blur',blur);const geometries=new Set(),materials=new Set(),textures=new Set();scene.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});materials.forEach(m=>{Object.values(m).forEach(v=>{if(v?.isTexture)textures.add(v);});m.dispose();});textures.forEach(t=>t.dispose());geometries.forEach(g=>g.dispose());renderer.dispose();canvas.remove();};
+  },[]);
+  return <section className="office-game office-three"><div className="office-three-heading"><div><small>СИМУЛЯТОР ЛЕХИ / 3D</small><h2>Офис. После дедлайна.</h2></div><span>Свободное исследование</span></div><div ref={host} className="office-three-viewport"><div className="office-three-hud"><strong>{room}</strong>{fallback&&<span>Камера: удерживайте левую кнопку мыши и двигайте мышь</span>}<span>{away?'Пора к боссу • кабинет справа от коридора':'Четыре комнаты • один очень срочный сотрудник'}</span></div>{!active&&<div className="office-three-pause"><div><small>ЛЕХА НА РАБОТЕ</small><h2>Дедлайн сам себя<br/>не сорвёт.</h2><p>Исследуйте офис. Кабинет босса — ваша база.<br/>Через минуту вне кабинета появится напоминание вернуться.</p>{error?<p role="alert">{error}</p>:<button onClick={()=>start.current()}>Войти в офис →</button>}<p>WASD — движение · Shift — бег · Пробел — прыжок<br/>Мышь — камера · E — удар клавиатурой · Esc — пауза</p></div></div>}</div><p className="office-three-controls">W A S D / движение　 SHIFT / ускорение　 ПРОБЕЛ / прыжок　 E / удар　 МЫШЬ / камера　 ESC / пауза</p></section>;
 }
