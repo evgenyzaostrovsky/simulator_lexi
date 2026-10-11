@@ -2,7 +2,7 @@
 
 Asset: `boar-hero.png`. Generated with the built-in image generation tool from the user's boar photograph. Transparent 2×2 sprite atlas: idle, run A, run B, keyboard strike. Source rectangles use the actual image dimensions. Used for the hero, dash afterimages and HUD portrait; employees retain their original atlas.
 
-The 3D office also reuses this atlas on an upright camera-facing plane with depth testing and a ground shadow. It is a 2D animated character in a 3D environment, not a rigged 3D model. Atlas selection preserves the original idle, two running poses and keyboard strike.
+The atlas is preserved as reference artwork. The current 3D office uses a procedural volumetric adaptation in `src/office3d-characters.js`: an articulated body, shaped ears and muzzle, geometric fur locks, hoofed feet, hands and a physical keyboard. It is a stylized adaptation, not an exact reconstruction of the painted artwork. Missing Russian keycaps С, Р, О, Ч, Н and 1/! expose recessed switches. The original atlas remains available to the older 2D renderer.
 
 ## Generation prompt
 

@@ -8,3 +8,8 @@
 .office-three-pause{position:absolute;inset:0;z-index:3;display:grid;place-items:center;background:linear-gradient(90deg,#14241ee8,#14241e70);padding:25px}.office-three-pause>div{max-width:550px;width:100%}.office-three-pause h2{font-size:clamp(30px,4vw,52px);line-height:1.05;margin:18px 0;color:#fff7e6}.office-three-pause p{font-size:14px;line-height:1.8;color:#d3d5c8}.office-three-pause button{background:#d1b886;color:#23332c;border:0;padding:16px 26px;border-radius:5px;font-weight:700;cursor:pointer}.office-three-controls{margin:0;padding:17px 24px;background:#202f2b;font-size:11px;line-height:1.8;border-radius:0 0 16px 16px;color:#bfc6bb}
 @media(max-width:650px){.office-three-heading>span{display:none}.office-three-heading{padding:14px}.office-three-hud{left:14px}.office-three-controls{font-size:10px}}
 .office-three-hud strong{white-space:pre-wrap}
+.office-strike-flash{position:absolute;inset:0;z-index:4;pointer-events:none;display:flex;align-items:center;justify-content:center;flex-direction:column;background:radial-gradient(ellipse,transparent 35%,#a7211870);box-shadow:inset 0 0 90px #e9372c70;animation:office-impact .65s ease-out both}
+.office-strike-flash b{font-size:clamp(24px,4vw,54px);color:#fff4d8;text-shadow:4px 4px #8d2018,-2px -2px #8d2018;transform:rotate(-7deg)}
+.office-strike-flash span{margin-top:30px;background:#7d241e;color:#ffe4a8;padding:8px 18px;letter-spacing:.1em;font-size:12px}
+@keyframes office-impact{0%{opacity:0;transform:scale(1.12)}15%{opacity:1;transform:translateX(-3px)}35%{transform:translateX(3px)}65%{opacity:1;transform:translateX(0)}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.office-strike-flash{animation:none}}

@@ -37,26 +37,4 @@ export function createOffice(scene){
   return {obstacles,cameraObjects};
 }
 
-export function createBoar(scene){
-  const root=new T.Group();root.position.set(6,0,4.5);scene.add(root);
-  const map=new T.TextureLoader().load('/art/boar-hero.png');
-  map.colorSpace=T.SRGBColorSpace;map.repeat.set(.5,.5);
-  map.minFilter=T.LinearFilter;map.magFilter=T.LinearFilter;map.generateMipmaps=false;
-  const material=new T.MeshBasicMaterial({map,alphaTest:.12,side:T.DoubleSide,toneMapped:false});
-  const hero=new T.Mesh(new T.PlaneGeometry(2.25,2.25),material);
-  hero.position.y=1.03;root.add(hero);
-  const shadow=new T.Mesh(new T.CircleGeometry(.55,32),new T.MeshBasicMaterial({color:'#1b1814',transparent:true,opacity:.22,depthWrite:false}));
-  shadow.rotation.x=-Math.PI/2;shadow.position.y=.045;scene.add(shadow);
-  let facing=1;
-  return {root,animate(time,moving,attack,yaw=0){
-    // Use the original four atlas cells, not a replacement low-poly animal.
-    const frame=attack>0?3:moving?1+Math.floor(time*9)%2:0;
-    const side=Math.sin(root.rotation.y-yaw);if(moving&&Math.abs(side)>.15)facing=Math.sign(side);
-    map.repeat.x=facing*.5;map.offset.set((frame%2)*.5+(facing<0?.5:0),frame<2?.5:0);
-    hero.rotation.y=yaw-root.rotation.y;
-    hero.position.y=1.03+(moving?Math.abs(Math.sin(time*9))*.035:Math.sin(time*2)*.008);
-    shadow.position.set(root.position.x,.045,root.position.z);
-    shadow.material.opacity=.22/(1+root.position.y);
-    shadow.scale.setScalar(1+root.position.y*.15);
-  }};
-}
+export {createBoar} from './office3d-characters';
