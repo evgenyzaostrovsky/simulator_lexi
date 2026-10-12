@@ -1,0 +1,6 @@
+import React from 'react';
+import {KEYBOARDS} from './office-economy.mjs';
+export default function OfficePlan({hud,onClaim,onUpgrade}){
+  const next=KEYBOARDS[hud.level+1];
+  return <div className="office-plan"><div><small>ОБЩИЙ ПЛАН · СМЕНА {hud.round}</small><strong>{Math.floor(hud.progress)} / {hud.target}</strong><progress value={hud.progress} max={hud.target}/><span>Выработка {hud.rate.toFixed(1)} ед/с · Премия {hud.bonus} ₽</span></div><div className="plan-legend"><span>🟢 В плане</span><span>🟡 Ранрейт — можно ускорить</span><span>🔴 Отстаёт — нужны повторные удары</span><small>Каждому нужно выполнить свою норму. Ускорение постепенно спадает.</small></div><div className="plan-shop"><b>Премии: {hud.money} ₽</b><span>⌨ {KEYBOARDS[hud.level].name} · сила {KEYBOARDS[hud.level].power.toFixed(2)}</span><button disabled={!hud.inOffice||!hud.ready} onClick={onClaim}>Забрать премию · {hud.bonus} ₽</button><button disabled={!hud.inOffice||!next||hud.money<next.cost} onClick={onUpgrade}>{next?`${next.name} · ${next.cost} ₽`:'Клавиатура улучшена до максимума'}</button><small>{hud.inOffice?'Ты в кабинете. Здесь можно забрать премию и купить клавиатуру.':'Для премии и покупок вернись в КАБИНЕТ , ЛЕХИ !'}</small></div></div>;
+}

@@ -1,0 +1,5 @@
+Generated with the built-in imagegen tool. Used as a transparent 2D office furniture sprite in OfficeIsometric.jsx.
+
+Final prompt:
+
+Use case: stylized-concept. Asset type: transparent isolated isometric 2D game furniture sprite. A lovingly detailed funny slightly wonky office desk workstation inspired by the warm clay-like cartoon art of Neighbours from Hell. Honey oak wooden desk with rounded chunky bevels, visible wood grain, three drawers with brass handles, four short legs. On desk: chunky cream CRT monitor with cheerful turquoise screen facing lower-left viewer, beige keyboard, red coffee mug, disordered papers and green binder. NO chair, NO people, NO floor tile, NO background, NO text, NO frame. True transparent background. Orthographic isometric camera, diamond floor plane 2:1, looking down about 30 degrees. Entire object centered with ample transparent margins including all feet, soft small contact shadow only. Bright warm daytime colors, painterly pre-rendered game asset, rich material shading and crisp silhouette, not low poly, not vector, not gloomy.

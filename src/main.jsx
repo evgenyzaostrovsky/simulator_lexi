@@ -1,10 +1,10 @@
-import React, {useState, useRef, useCallback, useLayoutEffect} from 'react';
+import React, {useState, useRef, useCallback, useLayoutEffect, lazy, Suspense} from 'react';
 import {createRoot} from 'react-dom/client';
 import './style.css';
 import './flight.css';
 import CommaFlight from './CommaFlight';
 import {samples, insertCommas} from './comma-text';
-import OfficeGame from './OfficeGame';
+const OfficeGame=lazy(()=>import('./OfficeIsometric'));
 
 const rageAngles = [-17, 12, -7, 21, 4, -25];
 
@@ -36,7 +36,7 @@ function App() {
     <section className="workbench"><div className="field-head"><span>ТЕКСТ ДЛЯ ОБРАБОТКИ</span><span className="counter">{(flight ?? text).length} / 500</span></div><div className={`textarea-wrap ${flight !== null ? 'is-flying' : ''}`}><textarea ref={input} aria-label="Текст для обработки" maxLength="500" readOnly={flight !== null} value={flight ?? text} onChange={e=>setText(e.target.value.replaceAll(',', ''))} placeholder="Напишите что-нибудь без запятых..."/>{flight !== null && <CommaFlight text={flight} button={button} onComplete={finish}/>}</div><div className="actions"><button ref={button} disabled={flight !== null || !text.trim()} className="comma-btn" onClick={commafy}><span>✦</span> ВБРОСИТЬ ЗАПЯТЫЕ</button><button disabled={flight !== null} className="generate" onClick={generate}>сгенерировать текст <span>↗</span></button></div></section>
     <button className="urgent" onClick={()=>{setRaging(true); setTimeout(()=>setRaging(false), 3800)}}><span>СРОЧНО!!!</span><small>НАЖМИ, ЕСЛИ ГОРОД ГОРИТ</small></button>
     </div>
-    {tab==='game' && <OfficeGame/>}
+    {tab==='game' && <Suspense fallback={<div className="game-loading" role="status">Готовим изометрический офис…</div>}><OfficeGame/></Suspense>}
     <footer><span>ЛЕХА НЕ ОДОБРЯЕТ ТИШИНУ</span><span>© 2026 / ВЕРСИЯ 1.0</span></footer>
     {raging && <div className="rage-overlay">{rageAngles.map((angle,i)=><div key={i} className="rage-card" style={{'--angle':`${angle}deg`,'--delay':`${i*45}ms`}}><div className="rage-text">СРОЧНО<br/>БЛЕАТЬ!!1</div><img src="/rage.png"/></div>)}<div className="rage-flash">СРОЧНО БЛЕАТЬ!!1</div></div>}
   </main>
